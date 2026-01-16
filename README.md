@@ -45,10 +45,10 @@ Modify `package.json`
 
 ```json
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
+"dev": "vite",
+"build": "vite build",
+"preview": "vite preview"
+},
 ```
 
 ### React
@@ -142,7 +142,7 @@ export default function App() {
 
   useEffect(() => {
     window.HSStaticMethods.autoInit();
-  }, [location.pathname]);
+  }, [location.pathname]);}
   //...
 ```
 
