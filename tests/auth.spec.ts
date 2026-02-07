@@ -1,4 +1,4 @@
-import {test, expect} from '@playwright/test';
+import { test, expect } from 'playwright-test-coverage';
 
 //mock out all calls to the backend
 //to check things are being mocked out correctly change env.dev variable to bogus url
