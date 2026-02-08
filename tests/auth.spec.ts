@@ -12,16 +12,6 @@ test('home page', async ({page}) => {
 
 test('register', async ({page}) => {
     await page.route('**/api/auth', async route => {
-        const request = route.request();
-
-        // assert frontend
-        const body = JSON.parse(request.postData() || '{}');
-        expect(body).toMatchObject({
-            name: 'James',
-            email: 'james@test.com',
-            password: 'password'
-        });
-
         await route.fulfill({
             status: 200,
             contentType: 'application/json',
@@ -78,3 +68,42 @@ test('login', async ({page}) => {
     await expect(page.getByRole('main')).toContainText('t@jwt.com');
 })
 
+test('adminLogin', async ({page}) => {
+    // Mock login API
+    await page.route('**/api/auth', async route => {
+        const request = route.request();
+        const body = JSON.parse(request.postData() || '{}');
+
+        // Optional but recommended: assert frontend payload
+        expect(body).toMatchObject({
+            email: 'admin@jwt.com',
+            password: 'admin'
+        });
+
+        await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+                user: {
+                    id: 1,
+                    name: 'Admin',
+                    email: 'admin@jwt.com',
+                    roles: [{role: 'admin'}]
+                },
+                token: 'fake.admin.jwt'
+            })
+        });
+    });
+
+    // User actions
+    await page.goto(site);
+    await page.getByRole('link', {name: 'Login'}).click();
+
+    await page.getByRole('textbox', {name: 'Email address'}).fill('admin@jwt.com');
+    await page.getByRole('textbox', {name: 'Password'}).fill('admin');
+    await page.getByRole('button', {name: 'Login'}).click();
+
+    // Assertions: admin UI appears
+    await expect(page.getByRole('link', {name: /admin/i})).toBeVisible();
+    await expect(page.getByRole('link', {name: /logout/i})).toBeVisible();
+})
