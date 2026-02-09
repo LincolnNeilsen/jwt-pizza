@@ -2,10 +2,8 @@ import {test, expect} from 'playwright-test-coverage';
 
 //mock out all calls to the backend
 //to check things are being mocked out correctly change env.dev variable to bogus url
-const site = 'https://pizza.lincstores.click/';
-
 test('home page', async ({page}) => {
-    await page.goto('/');
+    await page.goto('');
 
     expect(await page.title()).toBe('JWT Pizza');
 });
@@ -27,7 +25,7 @@ test('register', async ({page}) => {
         });
     });
     //User actions
-    await page.goto(site);
+    await page.goto('/');
     await page.getByRole('link', {name: 'Register'}).click();
     // Fill form
     await page.getByRole('textbox', {name: 'Full name'}).fill('James');
@@ -56,7 +54,7 @@ test('login', async ({page}) => {
 
 
 //User action
-    await page.goto(site);
+    await page.goto('/');
     await page.getByRole('link', {name: 'Login'}).click();
     await page.getByRole('textbox', {name: 'Email address'}).click();
     await page.getByRole('textbox', {name: 'Email address'}).fill('t@jwt.com');
@@ -66,6 +64,9 @@ test('login', async ({page}) => {
     await page.pause();
     await page.getByRole('link', {name: 't', exact: true}).click();
     await expect(page.getByRole('main')).toContainText('t@jwt.com');
+
+    //now try to log out
+    await page.getByRole('link', {name: 'Logout'}).click();
 })
 
 test('adminLogin', async ({page}) => {
@@ -96,7 +97,7 @@ test('adminLogin', async ({page}) => {
     });
 
     // User actions
-    await page.goto(site);
+    await page.goto('/');
     await page.getByRole('link', {name: 'Login'}).click();
 
     await page.getByRole('textbox', {name: 'Email address'}).fill('admin@jwt.com');
