@@ -1,23 +1,40 @@
-import { test, expect } from 'playwright-test-coverage';
+import {test, expect} from 'playwright-test-coverage';
 
-test('updateUser', async ({ page }) => {
+test('updateUser', async ({page}) => {
     const email = `user${Math.floor(Math.random() * 10000)}@jwt.com`;
     await page.goto('/');
-    await page.getByRole('link', { name: 'Register' }).click();
-    await page.getByRole('textbox', { name: 'Full name' }).fill('zog');
-    await page.getByRole('textbox', { name: 'Email address' }).fill(email);
-    await page.getByRole('textbox', { name: 'Password' }).fill('diner');
-    await page.getByRole('button', { name: 'Register' }).click();
+    await page.getByRole('link', {name: 'Register'}).click();
+    await page.getByRole('textbox', {name: 'Full name'}).fill('zog');
+    await page.getByRole('textbox', {name: 'Email address'}).fill(email);
+    await page.getByRole('textbox', {name: 'Password'}).fill('diner');
+    await page.getByRole('button', {name: 'Register'}).click();
 
-    await page.getByRole('link', { name: 'z' }).click();
+    await page.getByRole('link', {name: 'z'}).click();
 
     await expect(page.getByRole('main')).toContainText('diner');
 
-    await page.getByRole('button', { name: 'Edit' }).click();
+    await page.getByRole('button', {name: 'Edit'}).click();
     await expect(page.locator('h3')).toContainText('Edit user');
-    await page.getByRole('button', { name: 'Update' }).click();
+    await page.getByRole('button', {name: 'Update'}).click();
 
-    await page.waitForSelector('[role="dialog"].hidden', { state: 'attached' });
+    await page.waitForSelector('[role="dialog"].hidden', {state: 'attached'});
+
+    await page.getByRole('button', {name: 'Edit Profile'}).click();
+    await page.getByRole('textbox').first().click();
+    await page.getByRole('textbox').first().fill('zolg');
+    await page.getByRole('button', {name: 'Update'}).click();
+    await expect(page.getByText('zolg')).toBeVisible();
 
     await expect(page.getByRole('main')).toContainText('diner');
+
+    await page.getByRole('link', {name: 'Logout'}).click();
+    await page.getByRole('link', {name: 'Login'}).click();
+
+    await page.getByRole('textbox', {name: 'Email address'}).fill(email);
+    await page.getByRole('textbox', {name: 'Password'}).fill('diner');
+    await page.getByRole('button', {name: 'Login'}).click();
+
+    await page.getByRole('link', {name: 'z'}).click();
+
+    await expect(page.getByRole('main')).toContainText('zolg');
 });
