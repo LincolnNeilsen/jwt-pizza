@@ -49,9 +49,9 @@ export default function AdminDashboard(props: Props) {
     const filter = filterUserRef.current?.value ? `*${filterUserRef.current?.value}*` : '*';
     setUserList(await pizzaService.getUserList(0, 10, filter));
   }
-  async function deleteUser(user: User) {
-
-  }
+  // async function deleteUser(user: User) {
+  //
+  // }
 
   let response = <NotFound />;
   if (Role.isRole(props.user, Role.Admin)) {
