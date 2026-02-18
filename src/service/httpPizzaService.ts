@@ -70,9 +70,9 @@ class HttpPizzaService implements PizzaService {
     return Promise.resolve(result);
   }
 
-  async getUserList(page: number = 0, pageSize: number = 10, nameFilter: string = '*'): Promise<UserList> {
+  async getUserList(page: number = 0, limit: number = 10, nameFilter: string = '*'): Promise<UserList> {
     const nameQuery = nameFilter === '*' ? '' : nameFilter;
-    return this.callEndpoint(`/api/user?page=${page}&pageSize=${pageSize}&name=${nameQuery}`);
+    return this.callEndpoint(`/api/user?page=${page}&limit=${limit}&name=${nameQuery}`);
   }
 
   async getMenu(): Promise<Menu> {

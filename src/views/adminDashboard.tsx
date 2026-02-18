@@ -49,9 +49,9 @@ export default function AdminDashboard(props: Props) {
     const filter = filterUserRef.current?.value ? `*${filterUserRef.current?.value}*` : '*';
     setUserList(await pizzaService.getUserList(0, 10, filter));
   }
-  // async function deleteUser(user: User) {
-  //
-  // }
+   async function deleteUser(user: User) {
+
+   }
 
   let response = <NotFound />;
   if (Role.isRole(props.user, Role.Admin)) {
@@ -147,7 +147,7 @@ export default function AdminDashboard(props: Props) {
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="uppercase text-neutral-100 bg-slate-400 border-b-2 border-gray-500">
                       <tr>
-                        {['UserId', 'Name', 'Email', 'Password', 'Action'].map((header) => (
+                        {['UserId', 'Name', 'Email', 'Role', 'Action'].map((header) => (
                             <th key={header} scope="col" className="px-6 py-3 text-center text-xs font-medium">
                               {header}
                             </th>
@@ -161,7 +161,7 @@ export default function AdminDashboard(props: Props) {
                               <td className="text-start px-2 whitespace-nowrap text-l font-mono text-orange-600">{user.id}</td>
                               <td className="text-start px-2 whitespace-nowrap text-sm font-normal text-gray-800">{user.name}</td>
                               <td className="text-start px-2 whitespace-nowrap text-sm font-normal text-gray-800">{user.email}</td>
-                              <td className="text-start px-2 whitespace-nowrap text-sm font-normal text-gray-800">{user.password}</td>
+                              <td className="text-start px-2 whitespace-nowrap text-sm font-normal text-gray-800">  {user.roles?.map(r => r.role).join(', ')}</td>
                               <td className="px-6 py-1 whitespace-nowrap text-end text-sm font-medium">
                                 <button type="button" className="px-2 py-1 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-1 border-orange-400 text-orange-400  hover:border-orange-800 hover:text-orange-800" onClick={() => deleteUser(user)}>
                                   <TrashIcon />
