@@ -35,6 +35,21 @@ async function adminLogin(page: Page) {
         {id: '4', name: 'topSpot', admins: [], stores: []},
     ];
 
+    const users = [
+        {id: '1', name: 'pizza diner', email: 'diner@jwt.com', roles: [{role: Role.Diner}]},
+        {id: '2', name: 'test admin', email: 'test@jwt.com', roles: [{role: Role.Admin}]},
+    ];
+
+    // Add more users for paging test
+    for (let i = 3; i <= 15; i++) {
+        users.push({
+            id: i.toString(),
+            name: `user ${i}`,
+            email: `user${i}@jwt.com`,
+            roles: [{role: Role.Diner}]
+        });
+    }
+
     // Authorize login for the given user
     await page.route('*/**/api/auth', async (route) => {
         const loginReq = route.request().postDataJSON();
@@ -90,21 +105,6 @@ async function adminLogin(page: Page) {
         const pageParam = parseInt(url.searchParams.get('page') || '0');
         const pageSize = parseInt(url.searchParams.get('pageSize') || '10');
 
-        let users = [
-            {id: '1', name: 'pizza diner', email: 'diner@jwt.com', roles: [{role: Role.Diner}]},
-            {id: '2', name: 'test admin', email: 'test@jwt.com', roles: [{role: Role.Admin}]},
-        ];
-
-        // Add more users for paging test
-        for (let i = 3; i <= 15; i++) {
-            users.push({
-                id: i.toString(),
-                name: `user ${i}`,
-                email: `user${i}@jwt.com`,
-                roles: [{role: Role.Diner}]
-            });
-        }
-
         const filteredUsers = nameFilter ? users.filter(u => u.name.includes(nameFilter)) : users;
         const start = pageParam * pageSize;
         const end = start + pageSize;
@@ -127,6 +127,18 @@ async function adminLogin(page: Page) {
                 franchises.splice(index, 1);
             }
             await route.fulfill({json: {message: 'franchise closed'}});
+        }
+    });
+
+    await page.route(/\/api\/user\/(\d+)$/, async (route) => {
+        if (route.request().method() === 'DELETE') {
+            const url = route.request().url();
+            const id = url.split('/').pop();
+            const index = users.findIndex(u => u.id === id);
+            if (index !== -1) {
+                users.splice(index, 1);
+            }
+            await route.fulfill({json: {message: 'user deleted'}});
         }
     });
 
@@ -199,4 +211,23 @@ test('userListing', async ({page}) => {
 
     await page.getByRole('button', { name: '«' }).nth(1).click();
     await expect(page.getByRole('cell', { name: 'pizza diner' })).toBeVisible();
+})
+
+//test delete user
+test('deleteUser', async ({page}) => {
+    await adminLogin(page);
+    await page.getByRole('link', {name: 'Admin'}).click();
+    await expect(page.getByRole('heading', {name: 'Users'})).toBeVisible();
+
+    // Verify user exists
+    await expect(page.getByRole('cell', { name: 'user 12' })).not.toBeVisible();
+    await page.getByRole('button', { name: '»' }).nth(1).click();
+    await expect(page.getByRole('cell', { name: 'user 12' })).toBeVisible();
+
+    // Delete user
+    page.on('dialog', dialog => dialog.accept());
+    await page.getByRole('row', { name: 'user 12' }).getByRole('button', { name: 'Delete' }).click();
+
+    // Verify user is gone
+    await expect(page.getByRole('cell', { name: 'user 12' })).not.toBeVisible();
 })

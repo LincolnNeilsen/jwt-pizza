@@ -126,6 +126,10 @@ class HttpPizzaService implements PizzaService {
     localStorage.setItem('token', token);
     return Promise.resolve(user);
   }
+
+  async deleteUser(user: User): Promise<void> {
+    await this.callEndpoint(`/api/user/${user.id}`, 'DELETE');
+  }
 }
 
 const httpPizzaService = new HttpPizzaService();
