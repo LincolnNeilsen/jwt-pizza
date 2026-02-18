@@ -26,7 +26,12 @@ async function adminLogin(page: Page) {
                 {id: '6', name: 'American Fork', totalRevenue: 3000},
             ],
         },
-        {id: '3', name: 'PizzaCorp', admins: [{id: '2', name: 'fido', email: 'fido@jwt.com'}], stores: [{id: '7', name: 'Spanish Fork', totalRevenue: 500}]},
+        {
+            id: '3',
+            name: 'PizzaCorp',
+            admins: [{id: '2', name: 'fido', email: 'fido@jwt.com'}],
+            stores: [{id: '7', name: 'Spanish Fork', totalRevenue: 500}]
+        },
         {id: '4', name: 'topSpot', admins: [], stores: []},
     ];
 
@@ -64,12 +69,53 @@ async function adminLogin(page: Page) {
             const newFranchise = {
                 id: (franchises.length + 2).toString(),
                 name: franchiseReq.name,
-                admins: franchiseReq.admins.map((a: any, i: number) => ({id: (i + 10).toString(), name: 'new admin', email: a.email})),
+                admins: franchiseReq.admins.map((a: any, i: number) => ({
+                    id: (i + 10).toString(),
+                    name: 'new admin',
+                    email: a.email
+                })),
                 stores: [],
             };
             franchises.push(newFranchise);
             await route.fulfill({json: newFranchise});
         }
+    });
+
+    await page.route(/\/api\/user(\?.*)?$/, async (route) => {
+        const url = new URL(route.request().url());
+        let nameFilter = url.searchParams.get('name') || '';
+        if (nameFilter.startsWith('*') && nameFilter.endsWith('*')) {
+            nameFilter = nameFilter.substring(1, nameFilter.length - 1);
+        }
+        const pageParam = parseInt(url.searchParams.get('page') || '0');
+        const pageSize = parseInt(url.searchParams.get('pageSize') || '10');
+
+        let users = [
+            {id: '1', name: 'pizza diner', email: 'diner@jwt.com', roles: [{role: Role.Diner}]},
+            {id: '2', name: 'test admin', email: 'test@jwt.com', roles: [{role: Role.Admin}]},
+        ];
+
+        // Add more users for paging test
+        for (let i = 3; i <= 15; i++) {
+            users.push({
+                id: i.toString(),
+                name: `user ${i}`,
+                email: `user${i}@jwt.com`,
+                roles: [{role: Role.Diner}]
+            });
+        }
+
+        const filteredUsers = nameFilter ? users.filter(u => u.name.includes(nameFilter)) : users;
+        const start = pageParam * pageSize;
+        const end = start + pageSize;
+        const pageUsers = filteredUsers.slice(start, end);
+
+        await route.fulfill({
+            json: {
+                users: pageUsers,
+                more: end < filteredUsers.length,
+            }
+        });
     });
 
     await page.route(/\/api\/franchise\/(\d+)$/, async (route) => {
@@ -102,22 +148,55 @@ test('adminDashboardTest', async ({page}) => {
 
     // Go to admin dashboard
     await page.getByRole('link', {name: 'Admin'}).click();
-    await expect(page.getByRole('heading', { name: 'Franchises' })).toBeVisible();
+    await expect(page.getByRole('heading', {name: 'Franchises'})).toBeVisible();
 
     // Create franchise
-    await page.getByRole('button', { name: 'Add Franchise' }).click();
+    await page.getByRole('button', {name: 'Add Franchise'}).click();
     await page.getByPlaceholder('franchise name').fill('New Franchise');
     await page.getByPlaceholder('franchisee admin email').fill('new@jwt.com');
-    await page.getByRole('button', { name: 'Create' }).click();
+    await page.getByRole('button', {name: 'Create'}).click();
 
     // Verify created
     await expect(page.getByRole('main')).toContainText('New Franchise');
 
     // Delete franchise
-    await page.getByRole('row', { name: 'New Franchise' }).getByRole('button', { name: 'Close' }).click();
+    await page.getByRole('row', {name: 'New Franchise'}).getByRole('button', {name: 'Close'}).click();
     await expect(page.getByRole('main')).toContainText('Are you sure you want to close the New Franchise franchise?');
-    await page.getByRole('button', { name: 'Close' }).click();
+    await page.getByRole('button', {name: 'Close'}).click();
 
     // Verify deleted
     await expect(page.getByRole('main')).not.toContainText('New Franchise');
 });
+
+//userListing
+test('userListing', async ({page}) => {
+    await adminLogin(page);
+    await page.getByRole('link', {name: 'Admin'}).click();
+    await expect(page.getByRole('heading', {name: 'Users'})).toBeVisible();
+
+    // Verify initial population
+    await expect(page.getByRole('cell', { name: 'pizza diner' })).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'test admin' })).toBeVisible();
+
+    // Filter users
+    await page.getByRole('textbox', {name: 'Filter users'}).fill('test');
+    await page.getByRole('button', {name: 'Submit'}).nth(1).click();
+
+    // Verify filtered results
+    await expect(page.getByRole('cell', {name: 'test admin'})).toBeVisible();
+    await expect(page.getByRole('cell', {name: 'pizza diner'})).not.toBeVisible();
+
+    // Reset filter
+    await page.getByRole('textbox', {name: 'Filter users'}).fill('');
+    await page.getByRole('button', {name: 'Submit'}).nth(1).click();
+    await expect(page.getByRole('cell', { name: 'pizza diner' })).toBeVisible();
+
+    // Paging
+    await expect(page.getByRole('cell', { name: 'user 12' })).not.toBeVisible();
+    await page.getByRole('button', { name: '»' }).nth(1).click();
+    await expect(page.getByRole('cell', { name: 'user 12' })).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'pizza diner' })).not.toBeVisible();
+
+    await page.getByRole('button', { name: '«' }).nth(1).click();
+    await expect(page.getByRole('cell', { name: 'pizza diner' })).toBeVisible();
+})

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import NotFound from './notFound';
 import Button from '../components/button';
 import { pizzaService } from '../service/service';
-import { Franchise, FranchiseList, Role, Store, User } from '../service/pizzaService';
+import { Franchise, FranchiseList, Role, Store, User,UserList } from '../service/pizzaService';
 import { TrashIcon } from '../icons';
 
 interface Props {
@@ -17,11 +17,17 @@ export default function AdminDashboard(props: Props) {
   const [franchisePage, setFranchisePage] = React.useState(0);
   const filterFranchiseRef = React.useRef<HTMLInputElement>(null);
 
+  const [userList, setUserList] = React.useState<UserList>({ users: [], more: false});
+  const [userPage, setUserPage] = React.useState(0);
+  const filterUserRef = React.useRef<HTMLInputElement>(null);
+
+
   React.useEffect(() => {
     (async () => {
       setFranchiseList(await pizzaService.getFranchises(franchisePage, 3, '*'));
+      setUserList(await pizzaService.getUserList(userPage, 10, '*'));
     })();
-  }, [props.user, franchisePage]);
+  }, [props.user, franchisePage, userPage]);
 
   function createFranchise() {
     navigate('/admin-dashboard/create-franchise');
@@ -37,6 +43,14 @@ export default function AdminDashboard(props: Props) {
 
   async function filterFranchises() {
     setFranchiseList(await pizzaService.getFranchises(franchisePage, 10, `*${filterFranchiseRef.current?.value}*`));
+  }
+  async function filterUsers() {
+    setUserPage(0);
+    const filter = filterUserRef.current?.value ? `*${filterUserRef.current?.value}*` : '*';
+    setUserList(await pizzaService.getUserList(0, 10, filter));
+  }
+  async function deleteUser(user: User) {
+
   }
 
   let response = <NotFound />;
@@ -122,6 +136,66 @@ export default function AdminDashboard(props: Props) {
         </div>
         <div>
           <Button className="w-36 text-xs sm:text-sm sm:w-64" title="Add Franchise" onPress={createFranchise} />
+        </div>
+        <div className="text-start py-8 px-4 sm:px-6 lg:px-8">
+          <h3 className="text-neutral-100 text-xl">Users</h3>
+          <div className="bg-neutral-100 overflow-clip my-4">
+            <div className="flex flex-col">
+              <div className="-m-1.5 overflow-x-auto">
+                <div className="p-1.5 min-w-full inline-block align-middle">
+                  <div className="overflow-hidden">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="uppercase text-neutral-100 bg-slate-400 border-b-2 border-gray-500">
+                      <tr>
+                        {['UserId', 'Name', 'Email', 'Password', 'Action'].map((header) => (
+                            <th key={header} scope="col" className="px-6 py-3 text-center text-xs font-medium">
+                              {header}
+                            </th>
+                        ))}
+                      </tr>
+                      </thead>
+                      {userList.users.map((user, findex) => {
+                        return (
+                            <tbody key={findex} className="divide-y divide-gray-200">
+                            <tr className="border-neutral-500 border-t-2">
+                              <td className="text-start px-2 whitespace-nowrap text-l font-mono text-orange-600">{user.id}</td>
+                              <td className="text-start px-2 whitespace-nowrap text-sm font-normal text-gray-800">{user.name}</td>
+                              <td className="text-start px-2 whitespace-nowrap text-sm font-normal text-gray-800">{user.email}</td>
+                              <td className="text-start px-2 whitespace-nowrap text-sm font-normal text-gray-800">{user.password}</td>
+                              <td className="px-6 py-1 whitespace-nowrap text-end text-sm font-medium">
+                                <button type="button" className="px-2 py-1 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-1 border-orange-400 text-orange-400  hover:border-orange-800 hover:text-orange-800" onClick={() => deleteUser(user)}>
+                                  <TrashIcon />
+                                  Delete
+                                </button>
+                              </td>
+                            </tr>
+                            </tbody>
+                        );
+                      })}
+                      <tfoot>
+                      <tr>
+                        <td className="px-1 py-1">
+                          <input type="text" ref={filterUserRef} name="filterUsers" placeholder="Filter users" className="px-2 py-1 text-sm border border-gray-300 rounded-lg" />
+                          <button type="submit" className="ml-2 px-2 py-1 text-sm font-semibold rounded-lg border border-orange-400 text-orange-400 hover:border-orange-800 hover:text-orange-800" onClick={filterUsers}>
+                            Submit
+                          </button>
+                        </td>
+                        <td colSpan={4} className="text-end text-sm font-medium">
+                          <button className="w-12 p-1 text-sm font-semibold rounded-lg border border-transparent bg-white text-grey border-grey m-1 hover:bg-orange-200 disabled:bg-neutral-300 " onClick={() => setUserPage(userPage - 1)} disabled={userPage <= 0}>
+                            «
+                          </button>
+                          <button className="w-12 p-1 text-sm font-semibold rounded-lg border border-transparent bg-white text-grey border-grey m-1 hover:bg-orange-200 disabled:bg-neutral-300" onClick={() => setUserPage(userPage + 1)} disabled={!userList.more}>
+                            »
+                          </button>
+                        </td>
+                      </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </View>
     );
