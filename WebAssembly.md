@@ -67,7 +67,7 @@ python --version
 
 If those work, you’re good.
 
-----
+---
 ##### Step 1 — Install Emscripten
 Clone the SDK
 
@@ -95,7 +95,7 @@ emcc -v
 ```
 If you see version info, you’re ready.
 
-----
+---
 ##### Step 2 — Create the C prices program
 Create a new file called `prices.c` and paste in the following code:
 
@@ -118,7 +118,7 @@ emcc pricing.c -o pricing.js \
   -s EXPORTED_FUNCTIONS='["_btc_to_usd"]' \
   -s EXPORTED_RUNTIME_METHODS='["ccall"]'
   ```
-----
+---
 ##### Step 3 — Gluing to the frontend
 Move the 'pricing.js' and 'pricing.wasm' to jwt-pizza/public, so that react can see them.
 
