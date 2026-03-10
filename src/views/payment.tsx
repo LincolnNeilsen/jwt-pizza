@@ -5,12 +5,23 @@ import Button from '../components/button';
 import { pizzaService } from '../service/service';
 import { Order, OrderItem } from '../service/pizzaService';
 
+declare global {
+  interface Window {
+    Module: any;
+  }
+}
+
 export default function Payment() {
   const [errMessage, setErrorMessage] = React.useState('');
+  const [totalUSD, setTotalUSD] = React.useState<number | null>(null);
+
   const location = useLocation();
   const order: Order = location.state?.order || { items: [] };
   const navigate = useNavigate();
 
+  const totalBTC = order.items.reduce((a: any, c: any) => a + c.price, 0);
+
+  // --- 1️⃣ Check login ---
   React.useEffect(() => {
     (async () => {
       const user = await pizzaService.getUser();
@@ -21,6 +32,37 @@ export default function Payment() {
     })();
   }, []);
 
+  // --- 2️⃣ Load WebAssembly and convert BTC to USD ---
+  React.useEffect(() => {
+    // Assign Module object with onRuntimeInitialized before loading script
+    window.Module = {
+      onRuntimeInitialized: () => {
+        try {
+          const usd = window.Module.ccall(
+              'btc_to_usd',  // function in C
+              'number',      // return type
+              ['number'],    // argument types
+              [totalBTC]     // arguments
+          );
+          setTotalUSD(usd);
+        } catch (e) {
+          console.error('Error calling btc_to_usd:', e);
+        }
+      }
+    };
+
+    // Load the Emscripten-generated script
+    const script = document.createElement('script');
+    script.src = '/pricing.js';
+    document.body.appendChild(script);
+
+    // Cleanup
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, [totalBTC]);
+
+  // --- 3️⃣ Payment and cancel functions ---
   async function processPayment() {
     try {
       const confirmation = await pizzaService.order(order);
@@ -35,58 +77,61 @@ export default function Payment() {
   }
 
   return (
-    <View title="So worth it">
-      <div className="flex flex-col justify-center items-center py-8 px-4 sm:px-6 lg:px-8">
-        {errMessage && <div className="text-orange-700 bg-yellow-100 p-2 rounded-md">⚠️ {errMessage}</div>}
-        {!errMessage && order.items.length === 1 && <div className="text-neutral-100  p-2 rounded-md">Send me that pizza right now!</div>}
-        {!errMessage && order.items.length > 1 && (
-          <div className="text-neutral-100 p-2 rounded-md">Send me those {order.items.length} pizzas right now!</div>
-        )}
-        <div>
-          <Button title="Pay now" onPress={processPayment} />
-          <Button title="Cancel" onPress={cancel} className="bg-transparent border-neutral-300" />
-        </div>
-        <div className="bg-neutral-100 overflow-clip my-4">
-          <div className="flex flex-col">
-            <div className="-m-1.5 overflow-x-auto">
-              <div className="p-1.5 min-w-full inline-block align-middle">
-                <div className="overflow-hidden">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="text-neutral-100 bg-slate-400 border-b-2 border-gray-500">
+      <View title="So worth it">
+        <div className="flex flex-col justify-center items-center py-8 px-4 sm:px-6 lg:px-8">
+          {errMessage && <div className="text-orange-700 bg-yellow-100 p-2 rounded-md">⚠️ {errMessage}</div>}
+          {!errMessage && order.items.length === 1 && <div className="text-neutral-100  p-2 rounded-md">Send me that pizza right now!</div>}
+          {!errMessage && order.items.length > 1 && (
+              <div className="text-neutral-100 p-2 rounded-md">Send me those {order.items.length} pizzas right now!</div>
+          )}
+
+          <div>
+            <Button title="Pay now" onPress={processPayment} />
+            <Button title="Cancel" onPress={cancel} className="bg-transparent border-neutral-300" />
+          </div>
+
+          <div className="bg-neutral-100 overflow-clip my-4">
+            <div className="flex flex-col">
+              <div className="-m-1.5 overflow-x-auto">
+                <div className="p-1.5 min-w-full inline-block align-middle">
+                  <div className="overflow-hidden">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="text-neutral-100 bg-slate-400 border-b-2 border-gray-500">
                       <tr>
-                        <th scope="col" className="px-6 py-3 text-start text-xs sm:text-sm font-medium">
-                          Pie
-                        </th>
-                        <th scope="col" className="px-6 py-3 text-start text-xs sm:text-sm font-medium">
-                          Price
-                        </th>
+                        <th scope="col" className="px-6 py-3 text-start text-xs sm:text-sm font-medium">Pie</th>
+                        <th scope="col" className="px-6 py-3 text-start text-xs sm:text-sm font-medium">Price</th>
                       </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
                       {order.items.map((item: OrderItem, index: number) => (
-                        <tr key={index} className="hover:bg-gray-100">
-                          <td className="px-6 py-4 whitespace-nowrap text-start text-xs sm:text-sm font-medium text-gray-800">{item.description}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-start text-xs sm:text-sm text-gray-800">{item.price.toLocaleString()} ₿</td>
-                        </tr>
+                          <tr key={index} className="hover:bg-gray-100">
+                            <td className="px-6 py-4 whitespace-nowrap text-start text-xs sm:text-sm font-medium text-gray-800">{item.description}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-start text-xs sm:text-sm text-gray-800">{item.price.toLocaleString()} ₿</td>
+                          </tr>
                       ))}
-                    </tbody>
-                    <tfoot>
+                      </tbody>
+                      <tfoot>
                       <tr className="bg-orange-200 border-t-2 border-red-500">
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
                           {order.items.length} pie{order.items.length > 1 ? 's' : ''}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
-                          {order.items.reduce((a: any, c: any) => a + c.price, 0).toLocaleString()} ₿
+                          <div>{totalBTC.toLocaleString()} ₿</div>
+                          {totalUSD !== null ? (
+                              <div className="text-xs text-gray-500">${totalUSD.toFixed(2)} USD</div>
+                          ) : (
+                              <div className="text-xs text-gray-500">Loading conversion…</div>
+                          )}
                         </td>
                       </tr>
-                    </tfoot>
-                  </table>
+                      </tfoot>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </View>
+      </View>
   );
 }
