@@ -1,14 +1,14 @@
 ### PizzaStealer
 
-| Item           | Result                                            |
-| -------------- |---------------------------------------------------|
-| Date           | April 8, 2026                                     |
-| Target         | pizza.lincstores.click                            |
-| Classification | Broken Access Control                             |
-| Severity       | 2                                                 |
-| Description    | Can freely change and manipulate prices of pizzas |
-| Images         | ![img.png](freePizza!.png)                        |
-| Corrections    | Double check pricing on server side.              |
+| Item           | Result                                           |
+| -------------- |--------------------------------------------------|
+| Date           | April 8, 2026                                    |
+| Target         | pizza.lincstores.click                           |
+| Classification | Broken Access Control                            |
+| Severity       | 2                                                |
+| Description    | Can freely manipulate prices of pizzas |
+| Images         | ![img.png](freePizza!.png)                       |
+| Corrections    | Double check pricing on server side.             |
 
 ### PizzaSneaker
 | Item           | Result                                                                                                                                                                                       |
