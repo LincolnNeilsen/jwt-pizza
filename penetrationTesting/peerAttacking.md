@@ -1,3 +1,8 @@
+collaborative doc:
+https://docs.google.com/document/d/1e77GW040AUif_sgUc4Y_yfBe4rJo1qc2jRT4o5fUNpM/edit?usp=sharing
+
+my attacks:
+
 ### PizzaStealer
 
 | Item           | Result                                 |
